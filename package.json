@@ -1,0 +1,9 @@
+{
+  "name": "hackernews-helper",
+  "title": "hackernews-helper",
+  "id": "jid1-8s6GJFfMstHVzQ",
+  "description": "a firefox extension to help read news.ycombinator.com",
+  "author": "mmcru@outlook.com",
+  "license": "GPL 3.0",
+  "version": "0.1"
+}
