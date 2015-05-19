@@ -1,5 +1,5 @@
 <html>
-<head>
+	<head>
 	    <style type="text/css" media="all">
         * {
             font-family: Verdana,Geneva,sans-serif;
@@ -54,9 +54,33 @@
 			color: #000000;
 			font-size: 9pt
 		}
+		
+		#sortContainer {
+			width: 100%;
+			margin: 0 auto;
+			border: 1px solid black;
+		}
+		
+		.sorter {
+			color: slategray;
+			width: 50%;
+			text-align: center;
+			background-color: white;
+			display:inline-block;
+		}
+		
+		.selected {
+			color: white;
+			background-color: slategray;
+		}
+		
+		.unselected {
+			cursor: pointer;
+		}
+		
 		</style>
     </head>
 <body>
-    <h1>working...</h1>
+    <h1 class="unselected">working...</h1>
 </body>
 </html>
