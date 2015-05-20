@@ -1,14 +1,10 @@
-currentTabUrl = "";
-
-
-//jquery in here
-
-$(document).ready(function() {
-	$(".unselected").click(function(){
-		window.alert(".unselected was clicked");
-		$( this ).toggleClass("sorter");
-	});
-});
+function sortByCommentCount(a,b) {
+  if (a.commentcount < b.commentcount)
+    return 1;
+  if (a.commentcount > b.commentcount)
+    return -1;
+  return 0;
+};
 
 
 
@@ -24,10 +20,7 @@ addDateToDateField = function addDateToDateField(apiId) {
 
 self.port.on("searchHitsDict", function(hitsDict) {
 	
-	currentTabUrl = hitsDict.url;
-	
-	$('body').empty();
-	$('body').append("<div id='sortContainer'><div id='bydate' class='sorter selected'>by date</div><div id='byrelevance' class='sorter unselected'>by relevance</div></div>");
+	$("#workingMessage").remove();
 
 	for (hit in hitsDict.hits) {
 		
@@ -42,11 +35,60 @@ self.port.on("searchHitsDict", function(hitsDict) {
 			'<div class="dateDiv" id=' + hitsDict.hits[hit].objectID + '></div>'	+
 			'</div>';
 		
-		$('body').append(hitDiv);
+		$('#biggerContainerDiv').append(hitDiv);
 		
 		//update date fields with more api requests
 		addDateToDateField(hitsDict.hits[hit].objectID);
-	}
+	};
+	
+	
+	//event listener for sort by comments feature
+	var sortByRel = document.getElementById("byactivity");
+	sortByRel.addEventListener("click", function() {
+		$("#byactivity").removeClass("unselected");
+		$("#byactivity").addClass("selected");
+		$("#bydate").removeClass("selected");
+		
+		apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
+			hitsDict.url +
+			"&restrictSearchableAttributes=url" +
+			"&hitsPerPage=" +
+			hitsDict.nbHits;
+			
+		$("body").append("searching: " + apiUrl);
+		sortable = [];
+			
+		$.getJSON(
+			apiUrl,
+			function(jsonResults) {
+				
+				for (hit in jsonResults.hits) {
+					sortable.push({
+						id: jsonResults.hits[hit].ObjectID,
+						commentcount: jsonResults.hits[hit].num_comments,
+						title: jsonResults.hits[hit].title,
+						url: jsonResults.hits[hit].url,
+						author: jsonResults.hits[hit].author,
+					})
+				};
+				
+				sortable.sort(sortByCommentCount);
+				
+				$("body").empty();
+				$("body").append("number of results searched: " + sortable.length);
+				$("body").append("<h3>title0: " + sortable[0].title + "</h3>");
+				$("body").append("<h3>id0: " + sortable[0].id + "</h3>");
+				$("body").append("<h3>author0: " + sortable[0].author + "</h3>");
+				$("body").append("<h3>url0: " + sortable[0].url + "</h3>");
+				$("body").append("<h3>commentcount0: " + sortable[0].commentcount + "</h3>");
+				
+			}
+		)
+		
+		
+		
+	});
+	
 });
 
 self.port.on("nohits", function(titleAndUrl) {
