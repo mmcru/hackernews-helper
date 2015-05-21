@@ -1,96 +1,142 @@
-function sortByCommentCount(a,b) {
-  if (a.commentcount < b.commentcount)
+function byCommentCount(a,b) {
+  if (a.num_comments < b.num_comments)
     return 1;
-  if (a.commentcount > b.commentcount)
+  if (a.num_comments > b.num_comments)
     return -1;
   return 0;
 };
-
 
 
 addDateToDateField = function addDateToDateField(apiId) {
 	 $.getJSON(
 		"http://hn.algolia.com/api/v1/items/" + apiId,
 		function(itemApi){
+			$("#" + itemApi.id).empty();
 			$("#" + itemApi.id).append("submitted: " + (new Date(itemApi.created_at)).toLocaleDateString());
 		}
 	 )
- };
+};
 
 
-self.port.on("searchHitsDict", function(hitsDict) {
+//blank array for sorting json results by comment
+var sortable = [];
+var commentFilter = 1;
+
+
+//this function only exists to modify "sortable"
+sortByComments = function sortByComments(hits) {
 	
-	$("#workingMessage").remove();
+	sortable = [];
+	
+	for (hit in hits) {
+		sortable.push({
+			objectID: hits[hit].objectID,
+			num_comments: hits[hit].num_comments,
+			title: hits[hit].title,
+			url: hits[hit].url,
+			author: hits[hit].author,
+		});
+	};
+	sortable.sort(byCommentCount);
+};
 
-	for (hit in hitsDict.hits) {
+
+hitsToHtml = function hitsToHtml(hits) {
+	
+	for (hit in hits) {
 		
-		commentsLink = "<a href=https://news.ycombinator.com/item?id=" + hitsDict.hits[hit].objectID + " target='_blank'>  c: " + hitsDict.hits[hit].num_comments +"</a>";
-		titleLink = "<a href=" + hitsDict.hits[hit].url + " target='_blank'>" + hitsDict.hits[hit].title + "</a>";
-		authorLink = "<a href=" + "https://news.ycombinator.com/user?id=" + hitsDict.hits[hit].author + " target='_blank'> a: " + hitsDict.hits[hit].author + "</a>";	
+		commentsLink = "<a href=https://news.ycombinator.com/item?id=" + hits[hit].objectID + "target='_blank'>" + hits[hit].num_comments +"</a>";
+		titleLink = "<a href=" + hits[hit].url + " target='_blank'>" + hits[hit].title + "</a>";
+		authorLink = "<a href=" + "https://news.ycombinator.com/user?id=" + hits[hit].author + " target='_blank'> a: " + hits[hit].author + "</a>";
 		
 		hitDiv = '<div class="containerDiv">' +
 			'<div class="titleDiv">' + titleLink + "</div>" +
 			'<div class="commentsDiv">' + commentsLink + '</div>' +
 			'<div class="authorDiv">' + authorLink + '| </div>' +
-			'<div class="dateDiv" id=' + hitsDict.hits[hit].objectID + '></div>'	+
+			'<div class="dateDiv" id=' + hits[hit].objectID + '>fetching date...</div>'	+
 			'</div>';
 		
 		$('#biggerContainerDiv').append(hitDiv);
 		
 		//update date fields with more api requests
-		addDateToDateField(hitsDict.hits[hit].objectID);
+		addDateToDateField(hits[hit].objectID);
 	};
 	
+};
+
+
+recursiveQueryPlusAppend = function (url) {
+	
+	$.getJSON(
+		url,
+		function(results) {
+			
+			$("#biggerContainerDiv").empty()
+			
+			if (results.hits.length < 1000) {
+				
+				//this should populate "sortable" with sorted results by comment
+				sortByComments(results.hits);
+				
+				//this parse sortable into html divs
+				hitsToHtml(sortable.slice(0,9));
+
+			}
+			else {
+				$("#biggerContainerDiv").empty()
+				$("#biggerContainerDiv").append("<h3>lots of results!  working...</h3>");
+				//get rid of any previous comments filter
+				url = url.replace(/\&numericFilters\=num_comments\>\=[0-9]*/, "");
+				//add the new comments filter to the end
+				newApiUrl = url += "&numericFilters=num_comments>=" + commentFilter;
+				//double the comment filter for the next pass-through
+				commentFilter = commentFilter * 2;
+				//run the query again
+				recursiveQueryPlusAppend(newApiUrl);
+			};
+		}
+	);
+};
+
+
+resetButtons = function() {
+	$("#byactivity").addClass("unselected");
+	$("#byactivity").removeClass("selected");
+	$("#bydate").addClass("selected");
+};
+
+
+self.port.on("searchHitsDict", function(hitsDict) {
+	
+	$("#biggerContainerDiv").empty();
+	resetButtons();
+	hitsToHtml(hitsDict.hits);
 	
 	//event listener for sort by comments feature
-	var sortByRel = document.getElementById("byactivity");
-	sortByRel.addEventListener("click", function() {
-		$("#byactivity").removeClass("unselected");
-		$("#byactivity").addClass("selected");
-		$("#bydate").removeClass("selected");
-		
-		apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
-			hitsDict.url +
-			"&restrictSearchableAttributes=url" +
-			"&hitsPerPage=" +
-			hitsDict.nbHits;
+	if (document.getElementById("byactivity")) {
+		var sortByRel = document.getElementById("byactivity");
+		sortByRel.addEventListener("click", function() {
+			sortable = [];
+			$("#byactivity").removeClass("unselected");
+			$("#byactivity").addClass("selected");
+			$("#bydate").removeClass("selected");
 			
-		$("body").append("searching: " + apiUrl);
-		sortable = [];
+			$("#biggerContainerDiv").empty();
 			
-		$.getJSON(
-			apiUrl,
-			function(jsonResults) {
-				
-				for (hit in jsonResults.hits) {
-					sortable.push({
-						id: jsonResults.hits[hit].ObjectID,
-						commentcount: jsonResults.hits[hit].num_comments,
-						title: jsonResults.hits[hit].title,
-						url: jsonResults.hits[hit].url,
-						author: jsonResults.hits[hit].author,
-					})
-				};
-				
-				sortable.sort(sortByCommentCount);
-				
-				$("body").empty();
-				$("body").append("number of results searched: " + sortable.length);
-				$("body").append("<h3>title0: " + sortable[0].title + "</h3>");
-				$("body").append("<h3>id0: " + sortable[0].id + "</h3>");
-				$("body").append("<h3>author0: " + sortable[0].author + "</h3>");
-				$("body").append("<h3>url0: " + sortable[0].url + "</h3>");
-				$("body").append("<h3>commentcount0: " + sortable[0].commentcount + "</h3>");
-				
-			}
-		)
-		
-		
-		
-	});
-	
+			apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
+				hitsDict.url +
+				"&restrictSearchableAttributes=url" +
+				"&hitsPerPage=1000";
+			
+			recursiveQueryPlusAppend(apiUrl);
+			
+		});
+	}	
 });
 
+
+//this function should fire when there are no results from the url search
+//it creates a submission page
 self.port.on("nohits", function(titleAndUrl) {
 	$('body').empty();
 	submitUrl = "https://news.ycombinator.com/submitlink?u=" + 
