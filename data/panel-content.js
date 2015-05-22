@@ -7,6 +7,10 @@ function byCommentCount(a,b) {
 };
 
 
+/* $(document).ready(function() {
+	sortable = [];
+}); */
+
 addDateToDateField = function addDateToDateField(apiId) {
 	 $.getJSON(
 		"http://hn.algolia.com/api/v1/items/" + apiId,
@@ -71,7 +75,7 @@ recursiveQueryPlusAppend = function (url) {
 		url,
 		function(results) {
 			
-			$("#biggerContainerDiv").empty()
+			$("#biggerContainerDiv").empty();
 			
 			if (results.hits.length < 1000) {
 				
@@ -100,38 +104,69 @@ recursiveQueryPlusAppend = function (url) {
 
 
 resetButtons = function() {
-	$("#byactivity").addClass("unselected");
-	$("#byactivity").removeClass("selected");
-	$("#bydate").addClass("selected");
+	$("#sortContainer").empty();
+	var buttons = "<div id='bydate' class='sorter selected'>by date</div>" +
+		"<div id='byactivity' class='sorter unselected'>by activity</div>";
+	$("#sortContainer").append($.parseHTML(buttons));
 };
+
+/* 
+self.port.on("emptyNow", function(isEmptyNow) {
+	if (isEmptyNow) {
+		sortable = [];
+		resetButtons();
+		$("#biggerContainerDiv").empty();
+	};
+}); */
+
+
+/*  clickListener = function clickListener(dictUrl) {
+	$("#byactivity").removeClass("unselected");
+	$("#byactivity").addClass("selected");
+	$("#bydate").removeClass("selected");
+	
+	$("#biggerContainerDiv").empty();
+	
+	apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
+		dictUrl +
+		"&restrictSearchableAttributes=url" +
+		"&hitsPerPage=1000";
+	
+	recursiveQueryPlusAppend(apiUrl);
+			
+};  */
 
 
 self.port.on("searchHitsDict", function(hitsDict) {
 	
 	$("#biggerContainerDiv").empty();
+	
+	//remake the buttons, this gets rid of previous event handlers
+/* 	$("#sortContainer").empty();
+	$("#sortContainer").append("<div id='bydate' class='sorter selected'>by date</div>" +
+		"<div id='byactivity' class='sorter unselected'>by activity</div>"); */
+	
+	
 	resetButtons();
 	hitsToHtml(hitsDict.hits);
 	
-	//event listener for sort by comments feature
-	if (document.getElementById("byactivity")) {
-		var sortByRel = document.getElementById("byactivity");
-		sortByRel.addEventListener("click", function() {
-			sortable = [];
-			$("#byactivity").removeClass("unselected");
-			$("#byactivity").addClass("selected");
-			$("#bydate").removeClass("selected");
-			
-			$("#biggerContainerDiv").empty();
-			
+	sortable = [];
+	
+	if ($("byactivity")) {
+		
+ 		clickListener = function clickListener() {
+			$("#biggerContainerDiv").empty();			
 			apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
 				hitsDict.url +
 				"&restrictSearchableAttributes=url" +
-				"&hitsPerPage=1000";
-			
+				"&hitsPerPage=1000";			
 			recursiveQueryPlusAppend(apiUrl);
-			
-		});
-	}	
+					
+		};
+		
+		var sortByRel = document.getElementById("byactivity");
+		sortByRel.addEventListener("click", clickListener);
+	};
 });
 
 
