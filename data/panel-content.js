@@ -28,7 +28,7 @@ sortByComments = function sortByComments(hits) {
 	
 	sortable = [];
 	
-	for (hit in hits) {
+	for (var hit=0; hit < hits.length; hit++) {
 		sortable.push({
 			objectID: hits[hit].objectID,
 			num_comments: hits[hit].num_comments,
@@ -43,7 +43,7 @@ sortByComments = function sortByComments(hits) {
 
 hitsToHtml = function hitsToHtml(hits) {
 	
-	for (hit in hits) {
+	for (var hit=0; hit < hits.length; hit++) {
 		
 		commentsLink = "<a href=https://news.ycombinator.com/item?id=" + hits[hit].objectID + "target='_blank'>" + hits[hit].num_comments +"</a>";
 		titleLink = "<a href=" + hits[hit].url + " target='_blank'>" + hits[hit].title + "</a>";
