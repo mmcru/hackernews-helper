@@ -1,3 +1,14 @@
+//blank array for sorting json results by comment
+var sortable = [];
+var commentFilter = 1;
+var currentQueryUrl = "";
+var currentNumPages = 1;
+var currentPage = 0;
+var currentPageForDate = 0;
+
+
+
+
 function byCommentCount(a,b) {
   if (a.num_comments < b.num_comments)
     return 1;
@@ -6,10 +17,9 @@ function byCommentCount(a,b) {
   return 0;
 };
 
-
-/* $(document).ready(function() {
-	sortable = [];
-}); */
+var emitClick = function() {
+	self.port.emit("linkClicked", true);
+};
 
 addDateToDateField = function addDateToDateField(apiId) {
 	 $.getJSON(
@@ -20,11 +30,6 @@ addDateToDateField = function addDateToDateField(apiId) {
 		}
 	 )
 };
-
-
-//blank array for sorting json results by comment
-var sortable = [];
-var commentFilter = 1;
 
 
 //this function only exists to modify "sortable"
@@ -49,9 +54,9 @@ hitsToHtml = function hitsToHtml(hits) {
 	
 	for (var hit=0; hit < hits.length; hit++) {
 		
-		commentsLink = "<a href=https://news.ycombinator.com/item?id=" + hits[hit].objectID + "target='_blank'>" + hits[hit].num_comments +"</a>";
+		commentsLink = "<a href=https://news.ycombinator.com/item?id=" + hits[hit].objectID + " target='_blank'>c: " + hits[hit].num_comments +"</a>";
 		titleLink = "<a href=" + hits[hit].url + " target='_blank'>" + hits[hit].title + "</a>";
-		authorLink = "<a href=" + "https://news.ycombinator.com/user?id=" + hits[hit].author + " target='_blank'> a: " + hits[hit].author + "</a>";
+		authorLink = "<a href=" + "https://news.ycombinator.com/user?id=" + hits[hit].author + " target='_blank'>a: " + hits[hit].author + "</a>";
 		
 		hitDiv = '<div class="containerDiv">' +
 			'<div class="titleDiv">' + titleLink + "</div>" +
@@ -64,12 +69,13 @@ hitsToHtml = function hitsToHtml(hits) {
 		
 		//update date fields with more api requests
 		addDateToDateField(hits[hit].objectID);
+		$("a").click(emitClick);
 	};
 	
 };
 
 
-recursiveQueryPlusAppend = function (url) {
+recursiveQueryPlusAppend = function (url, pageNumber) {
 	
 	$.getJSON(
 		url,
@@ -82,9 +88,12 @@ recursiveQueryPlusAppend = function (url) {
 				//this should populate "sortable" with sorted results by comment
 				sortByComments(results.hits);
 				
-				//this parse sortable into html divs
-				hitsToHtml(sortable.slice(0,9));
-
+				//this parses sortable into html divs
+				var sortedTen = sortable.slice((10 * pageNumber),(10 * pageNumber + 9));
+				hitsToHtml(sortedTen);
+				resetButtons();
+				addPaging();
+				pagingLogicComments();
 			}
 			else {
 				$("#biggerContainerDiv").empty()
@@ -95,11 +104,24 @@ recursiveQueryPlusAppend = function (url) {
 				newApiUrl = url += "&numericFilters=num_comments>=" + commentFilter;
 				//double the comment filter for the next pass-through
 				commentFilter = commentFilter * 2;
-				//run the query again
-				recursiveQueryPlusAppend(newApiUrl);
+				//currentPageForDate++;
+				//run the query again, get next page
+				recursiveQueryPlusAppend(newApiUrl, pageNumber);
 			};
 		}
 	);
+};
+*/
+
+pagingLogicComments = function() {
+	if (currentPage < (currentNumPages - 1)) {
+		$("#nextButton").toggleClass("invalid valid");
+		$("#nextButton").click(nextCommQueryPage);
+	};
+	if (currentPage > 0) {
+		$("#prevButton").toggleClass("invalid valid");
+		//$("#prevButton").click();
+	}; 
 };
 
 
@@ -115,7 +137,7 @@ addPaging = function() {
 	$("#biggerContainerDiv").append($.parseHTML(pagingButtons));
 };
 
-pagingLogic = function() {
+pagingLogicDate = function() {
 	if (currentPage < (currentNumPages - 1)) {
 		$("#nextButton").toggleClass("invalid valid");
 		$("#nextButton").click(nextDateQueryPage);
@@ -126,9 +148,6 @@ pagingLogic = function() {
 	};
 };
 
-var currentQueryUrl = "";
-var currentNumPages = 1;
-var currentPage = 0;
 
 var nextDateQueryPage = function() {
 	
@@ -149,10 +168,11 @@ var nextDateQueryPage = function() {
 			resetButtons();
 			hitsToHtml(nextPageResponse.hits);
 			addPaging();
-			pagingLogic();
+			pagingLogicDate();
 		}
 	);
 };
+
 
 var prevDateQueryPage = function() {
 	
@@ -173,12 +193,21 @@ var prevDateQueryPage = function() {
 			resetButtons();
 			hitsToHtml(nextPageResponse.hits);
 			addPaging();
-			pagingLogic();
+			pagingLogicDate();
 		}
 	);
 };
 
 
+var nextCommQueryPage = function() {
+	currentPageForDate++;
+	var sortedTen = sortable.slice((10 * currentPageForDate),(10 * currentPageForDate + 9));
+	hitsToHtml(sortedTen);
+	resetButtons();
+	addPaging();
+	pagingLogicComments();
+};
+ 
 self.port.on("searchHitsDict", function(hitsDict) {
 	
 	currentQueryUrl = hitsDict.url;
@@ -200,64 +229,33 @@ self.port.on("searchHitsDict", function(hitsDict) {
 		//add click event
 		var nextPageButton = document.getElementById("nextButton");
 		nextPageButton.addEventListener("click", nextDateQueryPage);
-/* 		
- 		var nextListener = function(url, pageToGet) {
-			
-			$("#biggerContainerDiv").empty();
-			//currentPage++;
-			
-			var dateApiUrl = "http://hn.algolia.com/api/v1/search_by_date?query=" + 
-				//hitsDict.url +
-				url +
-				"&restrictSearchableAttributes=url" +
-				"&hitsPerPage=10" +
-				"&page=" +
-				pageToGet;
-			
-			$.getJSON(
-				dateApiUrl,
-				function(nextPageResponse) {
-					hitsToHtml(nextPageResponse.hits);
-					addPaging();
-					currentPage++;
-					$("#prevButton").toggleClass("invalid valid");
-					if (pageToGet < hitsDict.nbPages) {
-						$("#nextButton").toggleClass("invalid valid");
-						var nextPageButton = document.getElementById("nextButton");
-						nextPageButton.addEventListener("click", nextListenerTwo);
-						};
-				}
-			);
-		}; */
-		
-/* 		nextPageButton.addEventListener("click", function(){
-			nextListener(hitsDict.url, currentPage);
-		}); */
-		
+
 	};
 	
 	if ($("byactivity")) {
 		
  		var clickListener = function clickListener() {
 			$("#biggerContainerDiv").empty();			
-			apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
+			var apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
 				hitsDict.url +
 				"&restrictSearchableAttributes=url" +
 				"&hitsPerPage=1000";			
-			recursiveQueryPlusAppend(apiUrl);
+			recursiveQueryPlusAppend(apiUrl, 0);
 					
 		};
 		
-		var sortByRel = document.getElementById("byactivity");
-		sortByRel.addEventListener("click", clickListener);
+		//var sortByRel = document.getElementById("byactivity");
+		//sortByRel.addEventListener("click", clickListener);
+		$("#byactivity").click(clickListener);
 	};
 });
 
 
 //this function should fire when there are no results from the url search
 //it creates a submission page
-self.port.on("nohits", function(titleAndUrl) {
-	$('body').empty();
+self.port.on("noHits", function(titleAndUrl) {
+	$("#sortContainer").empty();
+	$("#biggerContainerDiv").empty();
 	submitUrl = "https://news.ycombinator.com/submitlink?u=" + 
 	titleAndUrl.url + 
 	"&t=" + 
@@ -265,5 +263,5 @@ self.port.on("nohits", function(titleAndUrl) {
 	
 	linkToSubmit = "<a class=submissionLink href=" + submitUrl + " target='_blank'>No matches.  Click to submit this page!</a>"
 
-	$('body').append(linkToSubmit);
+	$("#sortContainer").append(linkToSubmit);
 });
