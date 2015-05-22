@@ -110,51 +110,135 @@ resetButtons = function() {
 	$("#sortContainer").append($.parseHTML(buttons));
 };
 
-/* 
-self.port.on("emptyNow", function(isEmptyNow) {
-	if (isEmptyNow) {
-		sortable = [];
-		resetButtons();
-		$("#biggerContainerDiv").empty();
+addPaging = function() {
+	var pagingButtons = "<div id='pagingContainer'><div class='sorter invalid' id='prevButton'>previous</div><div class='sorter invalid' id='nextButton'>next</div></div>"
+	$("#biggerContainerDiv").append($.parseHTML(pagingButtons));
+};
+
+pagingLogic = function() {
+	if (currentPage < (currentNumPages - 1)) {
+		$("#nextButton").toggleClass("invalid valid");
+		$("#nextButton").click(nextDateQueryPage);
 	};
-}); */
+	if (currentPage > 0) {
+		$("#prevButton").toggleClass("invalid valid");
+		$("#prevButton").click(prevDateQueryPage);
+	};
+};
 
+var currentQueryUrl = "";
+var currentNumPages = 1;
+var currentPage = 0;
 
-/*  clickListener = function clickListener(dictUrl) {
-	$("#byactivity").removeClass("unselected");
-	$("#byactivity").addClass("selected");
-	$("#bydate").removeClass("selected");
+var nextDateQueryPage = function() {
 	
-	$("#biggerContainerDiv").empty();
+	currentPage++
 	
-	apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
-		dictUrl +
+	var dateApiUrl = "http://hn.algolia.com/api/v1/search_by_date?query=" + 
+		//hitsDict.url +
+		currentQueryUrl +
 		"&restrictSearchableAttributes=url" +
-		"&hitsPerPage=1000";
+		"&hitsPerPage=10" +
+		"&page=" +
+		currentPage;
 	
-	recursiveQueryPlusAppend(apiUrl);
-			
-};  */
+	$.getJSON(
+		dateApiUrl,
+		function(nextPageResponse) {
+			$("#biggerContainerDiv").empty();
+			resetButtons();
+			hitsToHtml(nextPageResponse.hits);
+			addPaging();
+			pagingLogic();
+		}
+	);
+};
+
+var prevDateQueryPage = function() {
+	
+	currentPage--;
+	
+	var dateApiUrl = "http://hn.algolia.com/api/v1/search_by_date?query=" + 
+		//hitsDict.url +
+		currentQueryUrl +
+		"&restrictSearchableAttributes=url" +
+		"&hitsPerPage=10" +
+		"&page=" +
+		currentPage;
+	
+	$.getJSON(
+		dateApiUrl,
+		function(nextPageResponse) {
+			$("#biggerContainerDiv").empty();
+			resetButtons();
+			hitsToHtml(nextPageResponse.hits);
+			addPaging();
+			pagingLogic();
+		}
+	);
+};
 
 
 self.port.on("searchHitsDict", function(hitsDict) {
 	
+	currentQueryUrl = hitsDict.url;
+	currentPage = 0;
+	currentNumPages = hitsDict.nbPages;
+	
 	$("#biggerContainerDiv").empty();
-	
-	//remake the buttons, this gets rid of previous event handlers
-/* 	$("#sortContainer").empty();
-	$("#sortContainer").append("<div id='bydate' class='sorter selected'>by date</div>" +
-		"<div id='byactivity' class='sorter unselected'>by activity</div>"); */
-	
 	
 	resetButtons();
 	hitsToHtml(hitsDict.hits);
-	
-	sortable = [];
+
+	//paging logic for sort by date here
+ 	if (hitsDict.nbHits > 10) {
+		
+		//set up paging
+		addPaging();
+		$("#nextButton").toggleClass("invalid valid");
+		
+		//add click event
+		var nextPageButton = document.getElementById("nextButton");
+		nextPageButton.addEventListener("click", nextDateQueryPage);
+/* 		
+ 		var nextListener = function(url, pageToGet) {
+			
+			$("#biggerContainerDiv").empty();
+			//currentPage++;
+			
+			var dateApiUrl = "http://hn.algolia.com/api/v1/search_by_date?query=" + 
+				//hitsDict.url +
+				url +
+				"&restrictSearchableAttributes=url" +
+				"&hitsPerPage=10" +
+				"&page=" +
+				pageToGet;
+			
+			$.getJSON(
+				dateApiUrl,
+				function(nextPageResponse) {
+					hitsToHtml(nextPageResponse.hits);
+					addPaging();
+					currentPage++;
+					$("#prevButton").toggleClass("invalid valid");
+					if (pageToGet < hitsDict.nbPages) {
+						$("#nextButton").toggleClass("invalid valid");
+						var nextPageButton = document.getElementById("nextButton");
+						nextPageButton.addEventListener("click", nextListenerTwo);
+						};
+				}
+			);
+		}; */
+		
+/* 		nextPageButton.addEventListener("click", function(){
+			nextListener(hitsDict.url, currentPage);
+		}); */
+		
+	};
 	
 	if ($("byactivity")) {
 		
- 		clickListener = function clickListener() {
+ 		var clickListener = function clickListener() {
 			$("#biggerContainerDiv").empty();			
 			apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
 				hitsDict.url +
