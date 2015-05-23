@@ -111,16 +111,16 @@ recursiveQueryPlusAppend = function (url, pageNumber) {
 		}
 	);
 };
-*/
+
 
 pagingLogicComments = function() {
-	if (currentPage < (currentNumPages - 1)) {
+	if (currentPageForDate < (currentNumPages - 1)) {
 		$("#nextButton").toggleClass("invalid valid");
 		$("#nextButton").click(nextCommQueryPage);
 	};
-	if (currentPage > 0) {
+	if (currentPageForDate > 0) {
 		$("#prevButton").toggleClass("invalid valid");
-		//$("#prevButton").click();
+		$("#prevButton").click(prevCommQueryPage);
 	}; 
 };
 
@@ -132,10 +132,12 @@ resetButtons = function() {
 	$("#sortContainer").append($.parseHTML(buttons));
 };
 
+
 addPaging = function() {
 	var pagingButtons = "<div id='pagingContainer'><div class='sorter invalid' id='prevButton'>previous</div><div class='sorter invalid' id='nextButton'>next</div></div>"
 	$("#biggerContainerDiv").append($.parseHTML(pagingButtons));
 };
+
 
 pagingLogicDate = function() {
 	if (currentPage < (currentNumPages - 1)) {
@@ -151,7 +153,7 @@ pagingLogicDate = function() {
 
 var nextDateQueryPage = function() {
 	
-	currentPage++
+	currentPage++;
 	
 	var dateApiUrl = "http://hn.algolia.com/api/v1/search_by_date?query=" + 
 		//hitsDict.url +
@@ -201,13 +203,26 @@ var prevDateQueryPage = function() {
 
 var nextCommQueryPage = function() {
 	currentPageForDate++;
+    $("#biggerContainerDiv").empty();
 	var sortedTen = sortable.slice((10 * currentPageForDate),(10 * currentPageForDate + 9));
 	hitsToHtml(sortedTen);
 	resetButtons();
 	addPaging();
 	pagingLogicComments();
 };
- 
+
+
+var prevCommQueryPage = function() {
+	currentPageForDate--;
+    $("#biggerContainerDiv").empty();
+	var sortedTen = sortable.slice((10 * currentPageForDate),(10 * currentPageForDate + 9));
+	hitsToHtml(sortedTen);
+	resetButtons();
+	addPaging();
+	pagingLogicComments();
+};
+
+
 self.port.on("searchHitsDict", function(hitsDict) {
 	
 	currentQueryUrl = hitsDict.url;
@@ -232,7 +247,7 @@ self.port.on("searchHitsDict", function(hitsDict) {
 
 	};
 	
-	if ($("byactivity")) {
+ 	if ($("byactivity")) {
 		
  		var clickListener = function clickListener() {
 			$("#biggerContainerDiv").empty();			
