@@ -5,8 +5,59 @@ var currentQueryUrl = "";
 var currentNumPages = 1;
 var currentPage = 0;
 var currentPageForDate = 0;
+var gloHits = {};
+var gloNbHits = 0;
 
 
+dateHitsToPage = function() {
+    $("#biggerContainerDiv").empty();
+	resetButtons();
+	hitsToHtml(gloHits);
+
+	//paging logic for sort by date here
+ 	if (gloNbHits > 10) {
+		
+		//set up paging
+		addPaging();
+		$("#nextButton").toggleClass("invalid valid");
+		
+		//add click event
+		var nextPageButton = document.getElementById("nextButton");
+		nextPageButton.addEventListener("click", nextDateQueryPage);
+
+	};
+};
+
+
+activityHitsToPage = function() {
+    //$("#biggerContainerDiv").empty();
+	//resetButtons();
+    activityQuery();
+	//hitsToHtml(gloHits);
+
+	//paging logic for sort by date here
+/*  	if (gloNbHits > 10) {
+		
+		//set up paging
+		addPaging();
+		$("#nextButton").toggleClass("invalid valid");
+		
+		//add click event
+		var nextPageButton = document.getElementById("nextButton");
+		nextPageButton.addEventListener("click", nextDateQueryPage);
+
+	}; */
+};
+
+
+activityHitsToPage = function() {
+    //$("#biggerContainerDiv").empty();
+    var apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
+        currentQueryUrl +
+        "&restrictSearchableAttributes=url" +
+        "&hitsPerPage=1000";
+    recursiveQueryPlusAppend(apiUrl);
+};
 
 
 function byCommentCount(a,b) {
@@ -17,11 +68,13 @@ function byCommentCount(a,b) {
   return 0;
 };
 
+
 var emitClick = function() {
 	self.port.emit("linkClicked", true);
 };
 
-addDateToDateField = function addDateToDateField(apiId) {
+
+addDateToDateField = function(apiId) {
 	 $.getJSON(
 		"http://hn.algolia.com/api/v1/items/" + apiId,
 		function(itemApi){
@@ -50,7 +103,7 @@ sortByComments = function sortByComments(hits) {
 };
 
 
-hitsToHtml = function hitsToHtml(hits) {
+hitsToHtml = function(hits) {
 	
 	for (var hit=0; hit < hits.length; hit++) {
 		
@@ -69,30 +122,44 @@ hitsToHtml = function hitsToHtml(hits) {
 		
 		//update date fields with more api requests
 		addDateToDateField(hits[hit].objectID);
-		$("a").click(emitClick);
+		$("#bydate").click(dateHitsToPage);
+        //addActivityListener();
+        $("#byactivity").click(activityHitsToPage);
 	};
+    
+    sendSizeToMain();
 	
 };
 
+sendSizeToMain = function() {
+    self.port.emit("resizePanel", 1.05 * $("body").outerHeight(true));
+};
 
-recursiveQueryPlusAppend = function (url, pageNumber) {
-	
+
+recursiveQueryPlusAppend = function(url) {
+
 	$.getJSON(
 		url,
 		function(results) {
 			
-			$("#biggerContainerDiv").empty();
 			
-			if (results.hits.length < 1000) {
-				
-				//this should populate "sortable" with sorted results by comment
+			if (results.nbHits < 1000) {   //results.hits.length < 1000) {
+            
+                //this should populate "sortable" with sorted results by comment
 				sortByComments(results.hits);
+            
+            
+                $("#biggerContainerDiv").empty();
+                resetButtons();
+                $("#byactivity").toggleClass("selected");
+                $("#bydate").toggleClass("selected");
+			
 				
 				//this parses sortable into html divs
-				var sortedTen = sortable.slice((10 * pageNumber),(10 * pageNumber + 9));
+				var sortedTen = sortable.slice((10 * currentPageForDate),(10 * currentPageForDate + 9));
+                
 				hitsToHtml(sortedTen);
-				resetButtons();
-				addPaging();
+ 				addPaging();
 				pagingLogicComments();
 			}
 			else {
@@ -106,7 +173,7 @@ recursiveQueryPlusAppend = function (url, pageNumber) {
 				commentFilter = commentFilter * 2;
 				//currentPageForDate++;
 				//run the query again, get next page
-				recursiveQueryPlusAppend(newApiUrl, pageNumber);
+				recursiveQueryPlusAppend(newApiUrl);
 			};
 		}
 	);
@@ -127,8 +194,8 @@ pagingLogicComments = function() {
 
 resetButtons = function() {
 	$("#sortContainer").empty();
-	var buttons = "<div id='bydate' class='sorter selected'>by date</div>" +
-		"<div id='byactivity' class='sorter unselected'>by activity</div>";
+	var buttons = "<div id='bydate' class='sorter clickable selected'>by date</div>" +
+		"<div id='byactivity' class='sorter clickable'>by activity</div>";
 	$("#sortContainer").append($.parseHTML(buttons));
 };
 
@@ -207,6 +274,8 @@ var nextCommQueryPage = function() {
 	var sortedTen = sortable.slice((10 * currentPageForDate),(10 * currentPageForDate + 9));
 	hitsToHtml(sortedTen);
 	resetButtons();
+    $("#byactivity").toggleClass("selected");
+    $("#bydate").toggleClass("selected");
 	addPaging();
 	pagingLogicComments();
 };
@@ -218,6 +287,8 @@ var prevCommQueryPage = function() {
 	var sortedTen = sortable.slice((10 * currentPageForDate),(10 * currentPageForDate + 9));
 	hitsToHtml(sortedTen);
 	resetButtons();
+    $("#byactivity").toggleClass("selected");
+    $("#bydate").toggleClass("selected");
 	addPaging();
 	pagingLogicComments();
 };
@@ -225,45 +296,17 @@ var prevCommQueryPage = function() {
 
 self.port.on("searchHitsDict", function(hitsDict) {
 	
-	currentQueryUrl = hitsDict.url;
+ 	currentQueryUrl = hitsDict.url;
 	currentPage = 0;
 	currentNumPages = hitsDict.nbPages;
+    gloHits = hitsDict.hits;
+    gloNbHits = hitsDict.nbHits;
 	
-	$("#biggerContainerDiv").empty();
-	
-	resetButtons();
-	hitsToHtml(hitsDict.hits);
-
-	//paging logic for sort by date here
- 	if (hitsDict.nbHits > 10) {
-		
-		//set up paging
-		addPaging();
-		$("#nextButton").toggleClass("invalid valid");
-		
-		//add click event
-		var nextPageButton = document.getElementById("nextButton");
-		nextPageButton.addEventListener("click", nextDateQueryPage);
-
-	};
-	
- 	if ($("byactivity")) {
-		
- 		var clickListener = function clickListener() {
-			$("#biggerContainerDiv").empty();			
-			var apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
-				hitsDict.url +
-				"&restrictSearchableAttributes=url" +
-				"&hitsPerPage=1000";			
-			recursiveQueryPlusAppend(apiUrl, 0);
-					
-		};
-		
-		//var sortByRel = document.getElementById("byactivity");
-		//sortByRel.addEventListener("click", clickListener);
-		$("#byactivity").click(clickListener);
-	};
+    dateHitsToPage();     
 });
+
+
+self.port.on("needSize", sendSizeToMain());
 
 
 //this function should fire when there are no results from the url search
