@@ -122,10 +122,13 @@ hitsToHtml = function(hits) {
 		
 		//update date fields with more api requests
 		addDateToDateField(hits[hit].objectID);
-		$("#bydate").click(dateHitsToPage);
+		//$("#bydate").click(dateHitsToPage);
         //addActivityListener();
-        $("#byactivity").click(activityHitsToPage);
+        //$("#byactivity").click(activityHitsToPage);
 	};
+	
+	$("#bydate").click(dateHitsToPage);
+	$("#byactivity").click(activityHitsToPage);
     
     sendSizeToMain();
 	
@@ -147,8 +150,7 @@ recursiveQueryPlusAppend = function(url) {
             
                 //this should populate "sortable" with sorted results by comment
 				sortByComments(results.hits);
-            
-            
+      
                 $("#biggerContainerDiv").empty();
                 resetButtons();
                 $("#byactivity").toggleClass("selected");
