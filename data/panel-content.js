@@ -1,9 +1,12 @@
 //blank array for sorting json results by comment
 var sortable = [];
+//recursive comment filter variable
 var commentFilter = 1;
+//globals for storing first api query from main.js
 var currentQueryUrl = "";
 var currentNumPages = 1;
 var currentPage = 0;
+var currentPageForDate = 0;
 var currentPageForDate = 0;
 var gloHits = {};
 var gloNbHits = 0;
@@ -30,28 +33,6 @@ dateHitsToPage = function() {
 
 
 activityHitsToPage = function() {
-    //$("#biggerContainerDiv").empty();
-	//resetButtons();
-    activityQuery();
-	//hitsToHtml(gloHits);
-
-	//paging logic for sort by date here
-/*  	if (gloNbHits > 10) {
-		
-		//set up paging
-		addPaging();
-		$("#nextButton").toggleClass("invalid valid");
-		
-		//add click event
-		var nextPageButton = document.getElementById("nextButton");
-		nextPageButton.addEventListener("click", nextDateQueryPage);
-
-	}; */
-};
-
-
-activityHitsToPage = function() {
-    //$("#biggerContainerDiv").empty();
     var apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
         currentQueryUrl +
         "&restrictSearchableAttributes=url" +
@@ -69,11 +50,6 @@ function byCommentCount(a,b) {
 };
 
 
-var emitClick = function() {
-	self.port.emit("linkClicked", true);
-};
-
-
 addDateToDateField = function(apiId) {
 	 $.getJSON(
 		"http://hn.algolia.com/api/v1/items/" + apiId,
@@ -86,7 +62,7 @@ addDateToDateField = function(apiId) {
 
 
 //this function only exists to modify "sortable"
-sortByComments = function sortByComments(hits) {
+sortByComments = function(hits) {
 	
 	sortable = [];
 	
@@ -112,30 +88,21 @@ hitsToHtml = function(hits) {
 		authorLink = "<a href=" + "https://news.ycombinator.com/user?id=" + hits[hit].author + " target='_blank'>a: " + hits[hit].author + "</a>";
 		
 		hitDiv = '<div class="containerDiv">' +
-			'<div class="titleDiv">' + titleLink + "</div>" +
-			'<div class="commentsDiv">' + commentsLink + '</div>' +
-			'<div class="authorDiv">' + authorLink + '| </div>' +
-			'<div class="dateDiv" id=' + hits[hit].objectID + '>fetching date...</div>'	+
-			'</div>';
+					'<div class="titleDiv">' + titleLink + "</div>" +
+					'<div class="commentsDiv">' + commentsLink + '</div>' +
+					'<div class="authorDiv">' + authorLink + '| </div>' +
+					'<div class="dateDiv" id=' + hits[hit].objectID + '>fetching date...</div>'	+
+				 '</div>';
 		
 		$('#biggerContainerDiv').append(hitDiv);
 		
-		//update date fields with more api requests
 		addDateToDateField(hits[hit].objectID);
-		//$("#bydate").click(dateHitsToPage);
-        //addActivityListener();
-        //$("#byactivity").click(activityHitsToPage);
 	};
 	
 	$("#bydate").click(dateHitsToPage);
 	$("#byactivity").click(activityHitsToPage);
-    
-    sendSizeToMain();
-	
-};
-
-sendSizeToMain = function() {
-    self.port.emit("resizePanel", 1.05 * $("body").outerHeight(true));
+	var footer = "<p>results:" + gloNbHits + "</p>";
+	$("#footerContainer").html(footer);	
 };
 
 
@@ -146,7 +113,7 @@ recursiveQueryPlusAppend = function(url) {
 		function(results) {
 			
 			
-			if (results.nbHits < 1000) {   //results.hits.length < 1000) {
+			if (results.nbHits < 1000) {
             
                 //this should populate "sortable" with sorted results by comment
 				sortByComments(results.hits);
@@ -166,14 +133,15 @@ recursiveQueryPlusAppend = function(url) {
 			}
 			else {
 				$("#biggerContainerDiv").empty()
-				$("#biggerContainerDiv").append("<h3>lots of results!  working...</h3>");
+				var spinner = new Spinner().spin();
+				$("#biggerContainerDiv").append(spinner.el);
 				//get rid of any previous comments filter
 				url = url.replace(/\&numericFilters\=num_comments\>\=[0-9]*/, "");
 				//add the new comments filter to the end
 				newApiUrl = url += "&numericFilters=num_comments>=" + commentFilter;
 				//double the comment filter for the next pass-through
 				commentFilter = commentFilter * 2;
-				//currentPageForDate++;
+
 				//run the query again, get next page
 				recursiveQueryPlusAppend(newApiUrl);
 			};
@@ -223,9 +191,9 @@ pagingLogicDate = function() {
 var nextDateQueryPage = function() {
 	
 	currentPage++;
+	$(window).scrollTop(0);
 	
 	var dateApiUrl = "http://hn.algolia.com/api/v1/search_by_date?query=" + 
-		//hitsDict.url +
 		currentQueryUrl +
 		"&restrictSearchableAttributes=url" +
 		"&hitsPerPage=10" +
@@ -248,9 +216,9 @@ var nextDateQueryPage = function() {
 var prevDateQueryPage = function() {
 	
 	currentPage--;
+	$(window).scrollTop(0);
 	
 	var dateApiUrl = "http://hn.algolia.com/api/v1/search_by_date?query=" + 
-		//hitsDict.url +
 		currentQueryUrl +
 		"&restrictSearchableAttributes=url" +
 		"&hitsPerPage=10" +
@@ -272,10 +240,11 @@ var prevDateQueryPage = function() {
 
 var nextCommQueryPage = function() {
 	currentPageForDate++;
+	$(window).scrollTop(0);
     $("#biggerContainerDiv").empty();
 	var sortedTen = sortable.slice((10 * currentPageForDate),(10 * currentPageForDate + 9));
-	hitsToHtml(sortedTen);
 	resetButtons();
+	hitsToHtml(sortedTen);
     $("#byactivity").toggleClass("selected");
     $("#bydate").toggleClass("selected");
 	addPaging();
@@ -285,10 +254,11 @@ var nextCommQueryPage = function() {
 
 var prevCommQueryPage = function() {
 	currentPageForDate--;
+	$(window).scrollTop(0);
     $("#biggerContainerDiv").empty();
 	var sortedTen = sortable.slice((10 * currentPageForDate),(10 * currentPageForDate + 9));
-	hitsToHtml(sortedTen);
 	resetButtons();
+	hitsToHtml(sortedTen);
     $("#byactivity").toggleClass("selected");
     $("#bydate").toggleClass("selected");
 	addPaging();
@@ -308,14 +278,12 @@ self.port.on("searchHitsDict", function(hitsDict) {
 });
 
 
-self.port.on("needSize", sendSizeToMain());
-
-
 //this function should fire when there are no results from the url search
 //it creates a submission page
 self.port.on("noHits", function(titleAndUrl) {
 	$("#sortContainer").empty();
 	$("#biggerContainerDiv").empty();
+	$("#footerContainer").empty();
 	submitUrl = "https://news.ycombinator.com/submitlink?u=" + 
 	titleAndUrl.url + 
 	"&t=" + 

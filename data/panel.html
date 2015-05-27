@@ -16,7 +16,11 @@
 		.titleDiv {
 			text-align: left;
 			width: 100%;
-			font-size: 8pt;
+			font-size: 7pt;
+			height: 2em;
+			line-height: 1em;
+			overflow: hidden;
+			padding-bottom: 11px;
 		}
 		
 		.titleDiv a {
@@ -28,10 +32,14 @@
 		}
 		
 		.containerDiv {
-			margin-top: 5px;
-			border-bottom: 1px solid black;
+			margin-top: 7px;
 			padding-bottom: 1px;
-			max-height: 45px;
+			height: 45px;
+			border-bottom: 1px solid #828282;
+		}
+		
+		.containerDiv:hover {
+			background-color: #FFE0CC;
 		}
 		
 		.commentsDiv {
@@ -76,6 +84,7 @@
 			text-align: center;
 			background-color: white;
 			display:inline-block;
+			border-bottom: 1px solid black;
 		}
 		
 		.selected {
@@ -87,8 +96,15 @@
 			cursor: pointer;
 		}
 		
-		.valid {
+		.clickable:hover {
 			font-weight: bold;
+		}
+		
+		a:hover {
+			font-weight: bold;
+		}
+		
+		.valid {
 			cursor: pointer;
 		}
 		
@@ -96,15 +112,26 @@
 			visibility: hidden;
 		}
 		
+		.valid:hover {
+			font-weight: bold;
+		}
+		
+		#footerContainer {
+			width: 100%;
+			margin: 0 auto;
+			text-align: center;
+			font-size: 6pt;
+		}
+		
 		</style>
-	<script src="./jquery-2.1.3.min.js"></script>
+<!-- 	<script src="./jquery-2.1.3.min.js"></script> -->
 	</head>
 <body>
 	<div id='sortContainer'>
 		<div id='bydate' class='sorter selected'>by date</div>
 		<div id='byactivity' class='sorter unselected'>by activity</div>
 	</div>
-	<div id='biggerContainerDiv'>
-	</div>
+	<div id='biggerContainerDiv'></div>
+	<div id='footerContainer'></div>
 </body>
 </html>
