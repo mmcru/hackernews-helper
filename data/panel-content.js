@@ -94,15 +94,16 @@ hitsToHtml = function(hits) {
 					'<div class="dateDiv" id=' + hits[hit].objectID + '>fetching date...</div>'	+
 				 '</div>';
 		
-		$('#biggerContainerDiv').append(hitDiv);
+		$('#biggerContainerDiv').append($.parseHTML(hitDiv));
 		
 		addDateToDateField(hits[hit].objectID);
 	};
 	
 	$("#bydate").click(dateHitsToPage);
 	$("#byactivity").click(activityHitsToPage);
+	$("#footerContainer").empty();
 	var footer = "<p>results:" + gloNbHits + "</p>";
-	$("#footerContainer").html(footer);	
+	$("#footerContainer").append($.parseHTML(footer));	
 };
 
 

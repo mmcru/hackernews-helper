@@ -1,9 +1,13 @@
 {
-  "name": "hackernews-helper",
-  "title": "hackernews-helper",
-  "id": "jid1-8s6GJFfMstHVzQ",
-  "description": "a firefox extension to help read news.ycombinator.com",
-  "author": "mmcru@outlook.com",
-  "license": "GPL 3.0",
-  "version": "0.1"
+  "title": "Hacker News Helper",
+  "name": "hackernewshelper",
+  "version": "0.0.1",
+  "description": "Adds a button that searches the current page's url against the news.ycombinator.com api.",
+  "main": "lib/main.js",
+  "author": "matt crupi",
+  "engines": {
+    "firefox": ">=38.0a1",
+    "fennec": ">=38.0a1"
+  },
+  "license": "GPLv3"
 }
