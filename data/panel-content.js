@@ -33,6 +33,7 @@ dateHitsToPage = function() {
 
 
 activityHitsToPage = function() {
+	currentPageForDate = 0;
     var apiUrl = "http://hn.algolia.com/api/v1/search?query=" + 
         currentQueryUrl +
         "&restrictSearchableAttributes=url" +
