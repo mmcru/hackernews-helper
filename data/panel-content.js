@@ -286,12 +286,14 @@ self.port.on("noHits", function(titleAndUrl) {
 	$("#sortContainer").empty();
 	$("#biggerContainerDiv").empty();
 	$("#footerContainer").empty();
+	newTitle = titleAndUrl.title.replace(/[^a-zA-Z0-9 :]/g, " ");
 	submitUrl = "https://news.ycombinator.com/submitlink?u=" + 
-	titleAndUrl.url + 
+	titleAndUrl.url +
 	"&t=" + 
-	titleAndUrl.title;
-	
-	linkToSubmit = "<a class=submissionLink href=" + submitUrl + " target='_blank'>No matches.  Click to submit this page!</a>"
+	newTitle;
+
+	var linkToSubmit = "<a class='submissionLink' href='" + submitUrl + "' target='_blank'>No matches.  Click to submit this page!</a>";
 
 	$("#sortContainer").append(linkToSubmit);
+	
 });
