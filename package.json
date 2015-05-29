@@ -1,7 +1,7 @@
 {
   "title": "Hacker News Helper",
   "name": "hackernewshelper",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Adds a button that searches the current page's url against the news.ycombinator.com api.",
   "main": "lib/main.js",
   "author": "matt crupi",
