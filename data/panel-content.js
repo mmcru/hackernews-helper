@@ -38,6 +38,7 @@ activityHitsToPage = function() {
         currentQueryUrl +
         "&restrictSearchableAttributes=url" +
         "&hitsPerPage=1000";
+	waitingAnimation();
     recursiveQueryPlusAppend(apiUrl);
 };
 
@@ -108,6 +109,41 @@ hitsToHtml = function(hits) {
 };
 
 
+waitingAnimation = function(){
+	var infinity = new Sonic({
+		width: 100,
+		height: 75,
+		padding: 10,
+
+		stepsPerFrame: 2,
+		trailLength: 1,
+		pointDistance: .03,
+
+		strokeColor: '#FF6600',
+		
+		step: 'fader',
+
+		multiplier: 2,
+
+		setup: function() {
+			this._.lineWidth = 5;
+		},
+		path: [
+	
+			['arc', 10, 10, 10, -270, -90],
+			['bezier', 10, 0, 40, 20, 20, 0, 30, 20],
+			['arc', 40, 10, 10, 90, -90],
+			['bezier', 40, 0, 10, 20, 30, 0, 20, 20]
+		]
+	});
+	infinity.play();
+	$("#footerContainer").empty();
+	$("#sortContainer").empty();
+	$("#biggerContainerDiv").empty();
+	$("#biggerContainerDiv").append(infinity.canvas);
+};
+
+
 recursiveQueryPlusAppend = function(url) {
 
 	$.getJSON(
@@ -134,9 +170,11 @@ recursiveQueryPlusAppend = function(url) {
 				pagingLogicComments();
 			}
 			else {
-				$("#biggerContainerDiv").empty()
-				var spinner = new Spinner().spin();
-				$("#biggerContainerDiv").append(spinner.el);
+				//$("#biggerContainerDiv").empty()
+				
+/* 				var spinner = new Spinner().spin();
+				$("#biggerContainerDiv").append(spinner.el); */
+				
 				//get rid of any previous comments filter
 				url = url.replace(/\&numericFilters\=num_comments\>\=[0-9]*/, "");
 				//add the new comments filter to the end
